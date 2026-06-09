@@ -268,7 +268,9 @@ function QuestionScreen({
           <button type="button" onClick={onBack} aria-label="بازگشت" className="round-icon">
             ›
           </button>
-          <span className="text-center text-base font-black">{step} / 6</span>
+          <span className="text-center text-base font-black" dir="ltr">
+            {step} / 6
+          </span>
         </div>
         <SegmentedProgress active={step - 1} />
       </header>
