@@ -1,33 +1,40 @@
 export const moods = [
-  { label: "😴 خواب‌آلودم", value: "خواب‌آلودم" },
-  { label: "🔥 انرژی می‌خواهم", value: "انرژی" },
-  { label: "😌 آرامش می‌خواهم", value: "آرامش" },
-  { label: "🥰 هوس شیرینی کردم", value: "هوس شیرینی کردم" },
-  { label: "📚 دارم کار می‌کنم", value: "دارم کار می‌کنم" },
-  { label: "🎉 با دوستام اومدم", value: "با دوستام اومدم" }
+  { label: "خواب‌آلودم", value: "خواب‌آلودم", icon: "😴" },
+  { label: "انرژی می‌خواهم", value: "انرژی", icon: "🔥" },
+  { label: "آرامش می‌خواهم", value: "آرامش", icon: "😌" },
+  { label: "هوس شیرینی کردم", value: "هوس شیرینی کردم", icon: "🥰" },
+  { label: "دارم کار می‌کنم", value: "دارم کار می‌کنم", icon: "📚" },
+  { label: "با دوستام اومدم", value: "با دوستام اومدم", icon: "🎉" }
 ] as const;
 
 export const flavors = [
-  { label: "🍫 شکلاتی", value: "شکلاتی" },
-  { label: "🍯 کاراملی", value: "کاراملی" },
-  { label: "🌰 فندقی", value: "فندقی" },
-  { label: "🍦 وانیلی", value: "وانیلی" },
-  { label: "🍓 میوه‌ای", value: "میوه‌ای" },
-  { label: "☕ کلاسیک", value: "کلاسیک" }
+  { label: "شکلاتی", value: "شکلاتی", icon: "🍫" },
+  { label: "کاراملی", value: "کاراملی", icon: "🟫" },
+  { label: "فندقی", value: "فندقی", icon: "🌰" },
+  { label: "وانیلی", value: "وانیلی", icon: "🍦" },
+  { label: "میوه‌ای", value: "میوه‌ای", icon: "🍓" },
+  { label: "کلاسیک", value: "کلاسیک", icon: "☕" }
 ] as const;
 
 export const temperatures = [
-  { label: "🔥 گرم", value: "گرم" },
-  { label: "🧊 سرد", value: "سرد" }
+  { label: "گرم", value: "گرم", icon: "🔥", helper: "نوشیدنی داغ و آرامش‌بخش" },
+  { label: "سرد", value: "سرد", icon: "🧊", helper: "خنک، سبک و پرانرژی" }
 ] as const;
 
 export const bases = [
-  { label: "☕ قهوه‌دار", value: "قهوه‌دار" },
-  { label: "🥛 بدون قهوه", value: "بدون قهوه" },
-  { label: "🎲 فرقی ندارد", value: "فرقی ندارد" }
+  { label: "قهوه‌دار", value: "قهوه‌دار", icon: "☕", helper: "با پایه اسپرسو" },
+  { label: "بدون قهوه", value: "بدون قهوه", icon: "🥛", helper: "بدون کافئین" },
+  { label: "فرقی ندارد", value: "فرقی ندارد", icon: "🎲", helper: "هر کدام خوبه" }
 ] as const;
 
-export const extras = ["خامه", "کارامل", "فندق", "وانیل", "دارچین", "شات اضافه"] as const;
+export const extras = [
+  { label: "خامه", icon: "🍦" },
+  { label: "کارامل", icon: "〰️" },
+  { label: "فندق", icon: "🌰" },
+  { label: "وانیل", icon: "🌼" },
+  { label: "دارچین", icon: "🪵" },
+  { label: "شات اضافه", icon: "☕" }
+] as const;
 
 export type MoodChoice = (typeof moods)[number]["value"];
 export type FlavorChoice = (typeof flavors)[number]["value"];
@@ -41,7 +48,7 @@ export type Drink = {
   temperature: TempChoice;
   base: BaseChoice;
   ingredients: string[];
-  gradient: string;
+  visual: "caramel" | "mocha" | "vanilla" | "hazelnut" | "classic" | "berry" | "lemon";
 };
 
 export type RecommendationAnswers = {
@@ -59,7 +66,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "کارامل", "یخ"],
-    gradient: "bg-[linear-gradient(145deg,#fff7da,#c9a227_48%,#6f4228)]"
+    visual: "caramel"
   },
   {
     name: "کارامل ماکیاتو",
@@ -68,7 +75,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر بخار داده شده", "کارامل", "فوم شیر"],
-    gradient: "bg-[linear-gradient(145deg,#fff5d7,#d7a93a_45%,#4b2e1f)]"
+    visual: "caramel"
   },
   {
     name: "فراپه کارامل",
@@ -77,7 +84,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "فرقی ندارد",
     ingredients: ["شیر", "یخ", "کارامل", "خامه"],
-    gradient: "bg-[linear-gradient(145deg,#fffaf0,#e3bd63_45%,#8a5a32)]"
+    visual: "caramel"
   },
   {
     name: "موکا گرم",
@@ -86,7 +93,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "شکلات"],
-    gradient: "bg-[linear-gradient(145deg,#f7dec0,#7b4930_45%,#2f1b13)]"
+    visual: "mocha"
   },
   {
     name: "آیس موکا",
@@ -95,7 +102,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "شکلات", "یخ"],
-    gradient: "bg-[linear-gradient(145deg,#f8e3cf,#8f5a3e_42%,#26130d)]"
+    visual: "mocha"
   },
   {
     name: "هات چاکلت",
@@ -104,7 +111,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "بدون قهوه",
     ingredients: ["شیر", "شکلات", "خامه"],
-    gradient: "bg-[linear-gradient(145deg,#fff2e2,#9d684c_45%,#3a2015)]"
+    visual: "mocha"
   },
   {
     name: "آیس چاکلت",
@@ -113,7 +120,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "بدون قهوه",
     ingredients: ["شیر", "شکلات", "یخ", "خامه"],
-    gradient: "bg-[linear-gradient(145deg,#f9eee2,#a47155_44%,#3b2218)]"
+    visual: "mocha"
   },
   {
     name: "وانیل لاته",
@@ -122,7 +129,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "وانیل"],
-    gradient: "bg-[linear-gradient(145deg,#fff7e4,#dfc88d_48%,#765032)]"
+    visual: "vanilla"
   },
   {
     name: "آیس وانیل لاته",
@@ -131,7 +138,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "وانیل", "یخ"],
-    gradient: "bg-[linear-gradient(145deg,#fff9e9,#d9c27c_45%,#64452b)]"
+    visual: "vanilla"
   },
   {
     name: "هزلنات لاته",
@@ -140,7 +147,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "فندق"],
-    gradient: "bg-[linear-gradient(145deg,#f6e5c9,#b98144_45%,#4a2b1b)]"
+    visual: "hazelnut"
   },
   {
     name: "آیس هزلنات",
@@ -149,7 +156,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "فندق", "یخ"],
-    gradient: "bg-[linear-gradient(145deg,#f8e8cc,#bf8648_45%,#52311f)]"
+    visual: "hazelnut"
   },
   {
     name: "آمریکانو",
@@ -158,7 +165,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "آب داغ"],
-    gradient: "bg-[linear-gradient(145deg,#f2ddc4,#6a3f2a_46%,#21120d)]"
+    visual: "classic"
   },
   {
     name: "آیس آمریکانو",
@@ -167,7 +174,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "آب سرد", "یخ"],
-    gradient: "bg-[linear-gradient(145deg,#e8f5ff,#7a4c35_45%,#23140f)]"
+    visual: "classic"
   },
   {
     name: "اسپرسو دبل",
@@ -176,7 +183,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "قهوه‌دار",
     ingredients: ["دو شات اسپرسو"],
-    gradient: "bg-[linear-gradient(145deg,#e9c8a3,#5c3422_45%,#160c08)]"
+    visual: "classic"
   },
   {
     name: "کاپوچینو",
@@ -185,7 +192,7 @@ export const drinks: Drink[] = [
     temperature: "گرم",
     base: "قهوه‌دار",
     ingredients: ["اسپرسو", "شیر", "فوم شیر"],
-    gradient: "bg-[linear-gradient(145deg,#fff1dc,#b37a45_44%,#422617)]"
+    visual: "classic"
   },
   {
     name: "میلک‌شیک توت‌فرنگی",
@@ -194,7 +201,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "بدون قهوه",
     ingredients: ["شیر", "بستنی", "توت‌فرنگی"],
-    gradient: "bg-[linear-gradient(145deg,#fff4f4,#e97686_45%,#7e3642)]"
+    visual: "berry"
   },
   {
     name: "اسموتی بری",
@@ -203,7 +210,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "بدون قهوه",
     ingredients: ["بری", "یخ", "شیر یا ماست"],
-    gradient: "bg-[linear-gradient(145deg,#fff1f7,#b85b86_45%,#4c2239)]"
+    visual: "berry"
   },
   {
     name: "لیموناد ویژه دی",
@@ -212,7 +219,7 @@ export const drinks: Drink[] = [
     temperature: "سرد",
     base: "فرقی ندارد",
     ingredients: ["لیمو", "یخ", "نعناع", "سیروپ مخصوص"],
-    gradient: "bg-[linear-gradient(145deg,#ffffe4,#d6c94d_45%,#497842)]"
+    visual: "lemon"
   }
 ];
 
@@ -221,7 +228,10 @@ export function recommendDrink(answers: RecommendationAnswers) {
     let score = 0;
     if (answers.flavor && drink.flavor === answers.flavor) score += 3;
     if (answers.temperature && drink.temperature === answers.temperature) score += 2;
-    if (answers.base && (drink.base === answers.base || answers.base === "فرقی ندارد" || drink.base === "فرقی ندارد")) {
+    if (
+      answers.base &&
+      (drink.base === answers.base || answers.base === "فرقی ندارد" || drink.base === "فرقی ندارد")
+    ) {
       score += 2;
     }
     if (answers.mood && drink.mood === answers.mood) score += 1;
@@ -230,18 +240,20 @@ export function recommendDrink(answers: RecommendationAnswers) {
 
   const best = scored.sort((first, second) => second.score - first.score)[0].drink;
   const matchedParts = [
-    answers.flavor && best.flavor === answers.flavor ? `طعم ${answers.flavor}` : null,
-    answers.temperature && best.temperature === answers.temperature ? `نوشیدنی ${answers.temperature}` : null,
-    answers.base && (best.base === answers.base || answers.base === "فرقی ندارد" || best.base === "فرقی ندارد")
-      ? `پایه ${answers.base}`
-      : null,
-    answers.mood && best.mood === answers.mood ? `حال‌وهوای ${answers.mood}` : null
-  ].filter(Boolean);
+    answers.mood && best.mood === answers.mood ? `حس امروزت: ${answers.mood}` : null,
+    answers.flavor && best.flavor === answers.flavor ? `طعم مورد علاقه: ${answers.flavor}` : null,
+    answers.temperature && best.temperature === answers.temperature ? `دمای انتخابی: ${answers.temperature}` : null,
+    answers.base &&
+    (best.base === answers.base || answers.base === "فرقی ندارد" || best.base === "فرقی ندارد")
+      ? `پایه نوشیدنی: ${answers.base}`
+      : null
+  ].filter(Boolean) as string[];
 
   return {
     drink: best,
+    matchedParts,
     reason: matchedParts.length
-      ? `چون با ${matchedParts.join("، ")} هماهنگ است، این انتخاب بیشترین امتیاز را از باریستای هوشمند گرفت.`
+      ? `این نوشیدنی چون با ${matchedParts.join("، ")} هماهنگ است بیشترین امتیاز را گرفت.`
       : "این نوشیدنی متعادل‌ترین انتخاب منوی کافه دی برای شروع است."
   };
 }

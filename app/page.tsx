@@ -8,13 +8,13 @@ import {
   FlavorChoice,
   MoodChoice,
   TempChoice,
+  bases,
   drinks,
   extras,
   flavors,
   moods,
   recommendDrink,
-  temperatures,
-  bases
+  temperatures
 } from "@/lib/menu-data";
 
 type Answers = {
@@ -25,37 +25,29 @@ type Answers = {
   extras: string[];
 };
 
-const steps = ["شروع", "حس", "طعم", "دما", "پایه", "افزودنی", "پیشنهاد"] as const;
-type Step = (typeof steps)[number];
-
-const stepOrder: Step[] = [...steps];
+const questionCount = 5;
 
 const screenVariants = {
-  initial: { opacity: 0, y: 22, scale: 0.98 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -18, scale: 0.98 }
+  initial: { opacity: 0, x: -18, scale: 0.985 },
+  animate: { opacity: 1, x: 0, scale: 1 },
+  exit: { opacity: 0, x: 18, scale: 0.985 }
 };
 
 export default function Home() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({ extras: [] });
-  const currentStep = stepOrder[stepIndex];
-  const progress = (stepIndex / (stepOrder.length - 1)) * 100;
-
+  const [ordered, setOrdered] = useState(false);
   const result = useMemo(() => recommendDrink(answers), [answers]);
   const similar = useMemo(() => findSimilarDrink(result.drink), [result.drink]);
 
-  const goNext = () => setStepIndex((value) => Math.min(value + 1, stepOrder.length - 1));
-  const goBack = () => setStepIndex((value) => Math.max(value - 1, 0));
   const restart = () => {
-    setAnswers({ extras: [] });
     setStepIndex(0);
+    setAnswers({ extras: [] });
+    setOrdered(false);
   };
 
-  const updateAnswer = <T extends keyof Answers>(key: T, value: Answers[T]) => {
-    setAnswers((current) => ({ ...current, [key]: value }));
-    window.setTimeout(goNext, 180);
-  };
+  const goNext = () => setStepIndex((current) => Math.min(current + 1, 6));
+  const goBack = () => setStepIndex((current) => Math.max(current - 1, 0));
 
   const toggleExtra = (extra: string) => {
     setAnswers((current) => ({
@@ -67,335 +59,473 @@ export default function Home() {
   };
 
   return (
-    <main className="safe-screen flex items-center justify-center px-4 py-5 text-cafe-brown">
-      <div className="relative w-full max-w-[430px] overflow-hidden rounded-[2rem] border border-white/70 bg-cafe-background/82 shadow-soft backdrop-blur">
-        <div className="absolute inset-x-0 top-0 h-48 bg-[linear-gradient(135deg,rgba(75,46,31,0.10),rgba(201,162,39,0.22),transparent)]" />
-        <div className="relative flex min-h-[calc(100svh-2.5rem)] flex-col px-5 pb-6 pt-5 sm:min-h-[780px]">
-          <TopBar
-            currentStep={currentStep}
-            progress={progress}
-            canGoBack={stepIndex > 0 && currentStep !== "پیشنهاد"}
-            onBack={goBack}
-            onRestart={restart}
-          />
-
-          <AnimatePresence mode="wait">
-            <motion.section
-              key={currentStep}
-              variants={screenVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.34, ease: "easeOut" }}
-              className="flex flex-1 flex-col"
-            >
-              {currentStep === "شروع" && <StartScreen onStart={goNext} />}
-              {currentStep === "حس" && (
-                <ChoiceScreen
-                  eyebrow="قدم ۱ از ۵"
-                  question="امروز چه حسی داری؟"
+    <main className="safe-screen flex items-center justify-center bg-cafe-background px-2 py-3 text-cafe-brown sm:px-4">
+      <div className={`app-shell ${stepIndex === 6 ? "result-shell" : ""}`}>
+        <AnimatePresence mode="wait">
+          <motion.section
+            key={stepIndex}
+            variants={screenVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            className="flex min-h-full flex-col"
+          >
+            {stepIndex === 0 && <StartScreen onStart={goNext} />}
+            {stepIndex === 1 && (
+              <QuestionScreen
+                step={2}
+                title="امروز چه حسی داری؟"
+                canContinue={Boolean(answers.mood)}
+                onBack={goBack}
+                onNext={goNext}
+              >
+                <OptionList
                   options={moods}
                   selected={answers.mood}
-                  onSelect={(value) => updateAnswer("mood", value)}
+                  onSelect={(value) => setAnswers((current) => ({ ...current, mood: value }))}
                 />
-              )}
-              {currentStep === "طعم" && (
-                <ChoiceScreen
-                  eyebrow="قدم ۲ از ۵"
-                  question="چه طعمی دوست داری؟"
+              </QuestionScreen>
+            )}
+            {stepIndex === 2 && (
+              <QuestionScreen
+                step={3}
+                title="چه طعمی دوست داری؟"
+                canContinue={Boolean(answers.flavor)}
+                onBack={goBack}
+                onNext={goNext}
+              >
+                <OptionList
                   options={flavors}
                   selected={answers.flavor}
-                  onSelect={(value) => updateAnswer("flavor", value)}
+                  onSelect={(value) => setAnswers((current) => ({ ...current, flavor: value }))}
+                  imageLike
                 />
-              )}
-              {currentStep === "دما" && (
-                <ChoiceScreen
-                  eyebrow="قدم ۳ از ۵"
-                  question="نوشیدنی گرم یا سرد؟"
-                  options={temperatures}
-                  selected={answers.temperature}
-                  onSelect={(value) => updateAnswer("temperature", value)}
-                  columns="two"
-                />
-              )}
-              {currentStep === "پایه" && (
-                <ChoiceScreen
-                  eyebrow="قدم ۴ از ۵"
-                  question="پایه نوشیدنی؟"
-                  options={bases}
-                  selected={answers.base}
-                  onSelect={(value) => updateAnswer("base", value)}
-                />
-              )}
-              {currentStep === "افزودنی" && (
-                <ExtrasScreen
-                  selected={answers.extras}
-                  onToggle={toggleExtra}
-                  onResult={goNext}
-                />
-              )}
-              {currentStep === "پیشنهاد" && (
-                <ResultScreen
-                  drink={result.drink}
-                  reason={result.reason}
-                  similar={similar}
-                  selectedExtras={answers.extras}
-                  onRestart={restart}
-                />
-              )}
-            </motion.section>
-          </AnimatePresence>
-        </div>
+              </QuestionScreen>
+            )}
+            {stepIndex === 3 && (
+              <QuestionScreen
+                step={4}
+                title="نوشیدنی گرم یا سرد؟"
+                canContinue={Boolean(answers.temperature)}
+                onBack={goBack}
+                onNext={goNext}
+              >
+                <div className="grid gap-4">
+                  {temperatures.map((option) => (
+                    <VisualChoice
+                      key={option.value}
+                      icon={option.icon}
+                      label={option.label}
+                      helper={option.helper}
+                      selected={answers.temperature === option.value}
+                      visual={option.value === "گرم" ? "hot" : "cold"}
+                      onClick={() => setAnswers((current) => ({ ...current, temperature: option.value }))}
+                    />
+                  ))}
+                </div>
+              </QuestionScreen>
+            )}
+            {stepIndex === 4 && (
+              <QuestionScreen
+                step={5}
+                title="پایه نوشیدنی؟"
+                canContinue={Boolean(answers.base)}
+                onBack={goBack}
+                onNext={goNext}
+              >
+                <div className="grid gap-3">
+                  {bases.map((option) => (
+                    <BaseChoiceCard
+                      key={option.value}
+                      option={option}
+                      selected={answers.base === option.value}
+                      onClick={() => setAnswers((current) => ({ ...current, base: option.value }))}
+                    />
+                  ))}
+                </div>
+              </QuestionScreen>
+            )}
+            {stepIndex === 5 && (
+              <QuestionScreen
+                step={6}
+                title="افزودنی‌ها"
+                subtitle="هر چی دوست داری انتخاب کن"
+                canContinue
+                onBack={goBack}
+                onNext={goNext}
+                nextLabel="دیدن پیشنهاد باریستا"
+                nextIcon="☕"
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  {extras.map((extra) => {
+                    const isSelected = answers.extras.includes(extra.label);
+                    return (
+                      <button
+                        type="button"
+                        key={extra.label}
+                        onClick={() => toggleExtra(extra.label)}
+                        className={`extra-card ${isSelected ? "selected" : ""}`}
+                      >
+                        <span className="check-dot">{isSelected ? "✓" : ""}</span>
+                        <span className="text-4xl">{extra.icon}</span>
+                        <span className="text-sm font-black">{extra.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </QuestionScreen>
+            )}
+            {stepIndex === 6 && (
+              <ResultScreen
+                drink={result.drink}
+                similar={similar}
+                matchedParts={result.matchedParts}
+                reason={result.reason}
+                selectedExtras={answers.extras}
+                ordered={ordered}
+                onOrder={() => setOrdered(true)}
+                onRestart={restart}
+              />
+            )}
+          </motion.section>
+        </AnimatePresence>
       </div>
     </main>
   );
 }
 
-function TopBar({
-  currentStep,
-  progress,
-  canGoBack,
-  onBack,
-  onRestart
-}: {
-  currentStep: Step;
-  progress: number;
-  canGoBack: boolean;
-  onBack: () => void;
-  onRestart: () => void;
-}) {
-  return (
-    <header className="relative z-10 mb-6">
-      <div className="mb-4 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={!canGoBack}
-          aria-label="بازگشت"
-          className="grid h-11 w-11 place-items-center rounded-full bg-white text-xl shadow-sm transition disabled:opacity-0"
-        >
-          ‹
-        </button>
-        <div className="text-center">
-          <p className="text-xs font-bold text-cafe-gold">کافه دی</p>
-          <p className="text-sm font-black">{currentStep === "پیشنهاد" ? "پیشنهاد باریستا" : "باریستای هوشمند"}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onRestart}
-          aria-label="شروع دوباره"
-          className="grid h-11 w-11 place-items-center rounded-full bg-white text-lg shadow-sm transition active:scale-95"
-        >
-          ↻
-        </button>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/70">
-        <motion.div
-          className="h-full rounded-full bg-cafe-gold"
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-        />
-      </div>
-    </header>
-  );
-}
-
 function StartScreen({ onStart }: { onStart: () => void }) {
   return (
-    <div className="flex flex-1 flex-col justify-between pb-3 pt-4">
-      <div>
-        <motion.div
-          initial={{ rotate: -6, scale: 0.94 }}
-          animate={{ rotate: 0, scale: 1 }}
-          transition={{ duration: 0.55, ease: "easeOut" }}
-          className="mx-auto mb-8 h-56 w-56 rounded-[2rem] bg-[radial-gradient(circle_at_48%_28%,#fff7df_0_18%,#c9a227_19%_28%,#6b402a_29%_50%,#2f1b13_51%_74%,#f7ead5_75%)] p-4 shadow-soft"
-        >
-          <div className="flex h-full items-end justify-center rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.2),rgba(255,255,255,0.75))] pb-6 text-6xl">
-            ☕
-          </div>
-        </motion.div>
-        <h1 className="text-4xl font-black leading-tight tracking-normal">منوی هوشمند کافه دی</h1>
-        <p className="mt-4 text-lg leading-8 text-cafe-brown/72">
+    <div className="relative flex min-h-full flex-col overflow-hidden rounded-[1.65rem] px-5 pb-5 pt-4">
+      <div className="mb-7 flex items-center justify-between text-xs font-black">
+        <span>9:41</span>
+        <span className="tracking-[0.18em]">●●● ▰</span>
+      </div>
+      <div className="flex flex-1 flex-col items-center text-center">
+        <LogoMark />
+        <h1 className="mt-12 text-[2.55rem] font-black leading-[1.18]">
+          منوی هوشمند
+          <span className="block text-cafe-gold">کافه دی</span>
+        </h1>
+        <div className="my-5 flex items-center gap-3 text-cafe-gold">
+          <span className="h-px w-7 bg-cafe-gold/50" />
+          <span className="text-2xl">☕</span>
+          <span className="h-px w-7 bg-cafe-gold/50" />
+        </div>
+        <p className="max-w-64 text-base font-bold leading-8 text-cafe-brown/80">
           چند سؤال کوتاه جواب بده تا نوشیدنی مناسب تو رو پیدا کنیم.
         </p>
+        <span className="mt-3 text-2xl text-cafe-gold">♡</span>
       </div>
-      <PrimaryButton onClick={onStart}>شروع</PrimaryButton>
+      <div className="coffee-hero" aria-hidden="true">
+        <span className="bean bean-one" />
+        <span className="bean bean-two" />
+        <span className="bean bean-three" />
+        <div className="latte-cup">
+          <span className="latte-art" />
+        </div>
+      </div>
+      <div className="relative z-10 mt-auto">
+        <DarkButton onClick={onStart} icon="←">
+          شروع
+        </DarkButton>
+        <div className="mt-5 flex justify-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-cafe-brown" />
+          <span className="h-2 w-2 rounded-full bg-cafe-brown/20" />
+          <span className="h-2 w-2 rounded-full bg-cafe-brown/20" />
+        </div>
+      </div>
     </div>
   );
 }
 
-function ChoiceScreen<T extends string>({
-  eyebrow,
-  question,
+function QuestionScreen({
+  step,
+  title,
+  subtitle,
+  children,
+  canContinue,
+  onBack,
+  onNext,
+  nextLabel = "بعدی",
+  nextIcon = "←"
+}: {
+  step: number;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  canContinue: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+  nextIcon?: string;
+}) {
+  return (
+    <div className="flex min-h-full flex-col px-5 pb-5 pt-6">
+      <header className="mb-7">
+        <div className="mb-5 grid grid-cols-[48px_1fr_48px] items-center">
+          <button type="button" onClick={onBack} aria-label="بازگشت" className="round-icon">
+            ›
+          </button>
+          <span className="text-center text-base font-black">{step} / 6</span>
+        </div>
+        <SegmentedProgress active={step - 1} />
+      </header>
+      <div className="mb-5 text-center">
+        <h2 className="text-[1.72rem] font-black leading-tight">{title}</h2>
+        {subtitle ? <p className="mt-2 text-sm font-bold text-cafe-brown/70">{subtitle}</p> : null}
+        <p className="mt-3 text-2xl text-cafe-gold">♡</p>
+      </div>
+      <div className="flex-1">{children}</div>
+      <footer className="mt-6 grid grid-cols-2 gap-3">
+        {step > 3 ? (
+          <LightButton onClick={onBack} icon="→">
+            بازگشت
+          </LightButton>
+        ) : (
+          <span />
+        )}
+        <DarkButton onClick={onNext} disabled={!canContinue} icon={nextIcon}>
+          {nextLabel}
+        </DarkButton>
+      </footer>
+    </div>
+  );
+}
+
+function SegmentedProgress({ active }: { active: number }) {
+  return (
+    <div className="mx-auto flex w-48 gap-2" dir="ltr">
+      {Array.from({ length: questionCount }).map((_, index) => (
+        <span
+          key={index}
+          className={`h-1.5 flex-1 rounded-full ${index < active ? "bg-cafe-gold" : "bg-cafe-brown/12"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function OptionList<T extends string>({
   options,
   selected,
   onSelect,
-  columns = "one"
+  imageLike = false
 }: {
-  eyebrow: string;
-  question: string;
-  options: readonly { label: string; value: T }[];
+  options: readonly { label: string; value: T; icon: string }[];
   selected?: T;
   onSelect: (value: T) => void;
-  columns?: "one" | "two";
+  imageLike?: boolean;
 }) {
   return (
-    <div className="flex flex-1 flex-col">
-      <ScreenTitle eyebrow={eyebrow} question={question} />
-      <div className={columns === "two" ? "grid grid-cols-2 gap-3" : "grid gap-3"}>
-        {options.map((option, index) => (
-          <motion.button
-            type="button"
-            key={option.value}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.045 }}
-            onClick={() => onSelect(option.value)}
-            className={`min-h-16 rounded-2xl border px-4 py-4 text-right text-lg font-extrabold shadow-sm transition active:scale-[0.98] ${
-              selected === option.value
-                ? "border-cafe-gold bg-cafe-brown text-white"
-                : "border-white bg-white text-cafe-brown"
-            }`}
-          >
-            {option.label}
-          </motion.button>
-        ))}
-      </div>
+    <div className="grid gap-3">
+      {options.map((option, index) => (
+        <motion.button
+          type="button"
+          key={option.value}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.035 }}
+          onClick={() => onSelect(option.value)}
+          className={`choice-card ${selected === option.value ? "selected" : ""}`}
+        >
+          <span className={imageLike ? "ingredient-visual" : "text-3xl"}>{option.icon}</span>
+          <span className="text-base font-black">{option.label}</span>
+        </motion.button>
+      ))}
     </div>
   );
 }
 
-function ExtrasScreen({
+function VisualChoice({
+  icon,
+  label,
+  helper,
   selected,
-  onToggle,
-  onResult
+  visual,
+  onClick
 }: {
-  selected: string[];
-  onToggle: (extra: string) => void;
-  onResult: () => void;
+  icon: string;
+  label: string;
+  helper: string;
+  selected: boolean;
+  visual: "hot" | "cold";
+  onClick: () => void;
 }) {
   return (
-    <div className="flex flex-1 flex-col justify-between">
-      <div>
-        <ScreenTitle eyebrow="قدم ۵ از ۵" question="افزودنی‌ها" />
-        <div className="grid grid-cols-2 gap-3">
-          {extras.map((extra, index) => {
-            const isActive = selected.includes(extra);
-            return (
-              <motion.button
-                type="button"
-                key={extra}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.045 }}
-                onClick={() => onToggle(extra)}
-                className={`min-h-16 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-sm transition active:scale-[0.98] ${
-                  isActive
-                    ? "border-cafe-gold bg-cafe-brown text-white"
-                    : "border-white bg-white text-cafe-brown"
-                }`}
-              >
-                <span className="mb-1 block text-xl">{isActive ? "✓" : "+"}</span>
-                {extra}
-              </motion.button>
-            );
-          })}
-        </div>
+    <button type="button" onClick={onClick} className={`visual-card ${selected ? "selected" : ""}`}>
+      <div className={`temperature-art ${visual}`}>
+        <span className="drink-shape" />
       </div>
-      <PrimaryButton onClick={onResult}>دیدن پیشنهاد باریستا</PrimaryButton>
-    </div>
+      <div>
+        <p className="text-lg font-black">
+          {label} <span>{icon}</span>
+        </p>
+        <p className="mt-1 text-xs font-bold text-cafe-brown/55">{helper}</p>
+      </div>
+    </button>
+  );
+}
+
+function BaseChoiceCard({
+  option,
+  selected,
+  onClick
+}: {
+  option: (typeof bases)[number];
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className={`base-card ${selected ? "selected" : ""}`}>
+      <span className="ingredient-visual">{option.icon}</span>
+      <span>
+        <span className="block text-base font-black">{option.label}</span>
+        <span className="mt-1 block text-xs font-bold text-cafe-brown/55">{option.helper}</span>
+      </span>
+    </button>
   );
 }
 
 function ResultScreen({
   drink,
-  reason,
   similar,
+  matchedParts,
+  reason,
   selectedExtras,
+  ordered,
+  onOrder,
   onRestart
 }: {
   drink: Drink;
-  reason: string;
   similar: Drink;
+  matchedParts: string[];
+  reason: string;
   selectedExtras: string[];
+  ordered: boolean;
+  onOrder: () => void;
   onRestart: () => void;
 }) {
-  const [ordered, setOrdered] = useState(false);
-  const ingredients = Array.from(new Set([...drink.ingredients, ...selectedExtras])).join("، ");
+  const ingredients = Array.from(new Set([...drink.ingredients, ...selectedExtras]));
 
   return (
-    <div className="flex flex-1 flex-col">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        className={`mb-5 grid h-64 place-items-center rounded-[2rem] ${drink.gradient} shadow-soft`}
-      >
-        <div className="relative h-40 w-28">
-          <div className="absolute inset-x-2 bottom-0 h-32 rounded-b-[2rem] rounded-t-xl bg-white/70 shadow-inner" />
-          <div className="absolute inset-x-0 bottom-2 h-24 rounded-b-[1.6rem] rounded-t-lg bg-cafe-brown/85" />
-          <div className="absolute inset-x-3 top-2 h-16 rounded-full bg-white/75" />
-          <div className="absolute inset-x-9 top-0 h-5 rounded-full bg-cafe-gold" />
-        </div>
-      </motion.div>
-
-      <div className="rounded-[1.6rem] bg-white p-5 shadow-sm">
-        <p className="mb-2 text-sm font-black text-cafe-gold">پیشنهاد نهایی</p>
-        <h2 className="text-3xl font-black leading-tight">{drink.name}</h2>
-        <InfoBlock title="مواد تشکیل‌دهنده" body={ingredients} />
-        <InfoBlock title="چرا این نوشیدنی؟" body={reason} />
-        <InfoBlock title="پیشنهاد مشابه" body={similar.name} />
-      </div>
-
-      <div className="mt-auto grid gap-3 pt-5">
-        <PrimaryButton onClick={() => setOrdered(true)}>
-          {ordered ? "سفارش انتخاب شد" : "سفارش این نوشیدنی"}
-        </PrimaryButton>
-        <button
-          type="button"
-          onClick={onRestart}
-          className="h-14 rounded-2xl border border-cafe-brown/12 bg-white text-base font-black text-cafe-brown transition active:scale-[0.98]"
-        >
-          شروع دوباره
+    <div className="grid min-h-full gap-4 p-4 lg:grid-cols-[1fr_1.1fr]">
+      <div className="result-photo">
+        <button type="button" aria-label="علاقه‌مندی" className="round-icon absolute right-4 top-4 z-20 bg-white/90">
+          ♡
         </button>
+        <DrinkGlass visual={drink.visual} large />
+        <div className="ingredients-card">
+          <h3>مواد تشکیل‌دهنده</h3>
+          <div className="grid grid-cols-2 gap-3 text-sm font-bold">
+            {ingredients.map((item) => (
+              <span key={item}>☕ {item}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="result-copy flex flex-col gap-4 rounded-[1.7rem] p-2">
+        <div className="pt-4 text-center lg:text-right">
+          <p className="text-base font-black">✨ پیشنهاد باریستا برای شما</p>
+          <h2 className="mt-4 text-[2.45rem] font-black leading-tight text-cafe-brown">{drink.name}</h2>
+          <p className="mt-3 text-base font-bold leading-7 text-cafe-brown">
+            ترکیبی خوش‌طعم و انرژی‌بخش از {drink.ingredients.slice(0, 3).join("، ")}
+          </p>
+        </div>
+        <div className="glass-panel">
+          <h3 className="mb-4 text-base font-black text-cafe-gold">این نوشیدنی انتخاب شد چون:</h3>
+          <div className="grid gap-3">
+            {(matchedParts.length ? matchedParts : [reason]).map((part) => (
+              <p key={part} className="flex items-center gap-2 text-sm font-bold">
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-cafe-gold text-xs text-white">✓</span>
+                {part}
+              </p>
+            ))}
+          </div>
+        </div>
+        <div className="similar-card">
+          <div>
+            <p className="mb-2 text-sm font-black text-cafe-gold">پیشنهاد مشابه</p>
+            <h3 className="text-lg font-black">{similar.name}</h3>
+          </div>
+          <DrinkGlass visual={similar.visual} />
+          <span className="round-mini">←</span>
+        </div>
+        <div className="mt-auto grid grid-cols-[0.85fr_1.45fr] gap-3">
+          <LightButton onClick={onRestart} icon="↻">
+            شروع دوباره
+          </LightButton>
+          <DarkButton onClick={onOrder} icon="🛍️">
+            {ordered ? "سفارش انتخاب شد" : "سفارش این نوشیدنی"}
+          </DarkButton>
+        </div>
       </div>
     </div>
   );
 }
 
-function ScreenTitle({ eyebrow, question }: { eyebrow: string; question: string }) {
+function DrinkGlass({ visual, large = false }: { visual: Drink["visual"]; large?: boolean }) {
   return (
-    <div className="mb-6">
-      <p className="mb-2 text-sm font-black text-cafe-gold">{eyebrow}</p>
-      <h2 className="text-3xl font-black leading-tight">{question}</h2>
+    <div className={`drink-glass ${visual} ${large ? "large" : ""}`} aria-hidden="true">
+      <span className="ice ice-one" />
+      <span className="ice ice-two" />
+      <span className="cream-line" />
+      <span className="caramel-line" />
     </div>
   );
 }
 
-function InfoBlock({ title, body }: { title: string; body: string }) {
+function LogoMark() {
   return (
-    <div className="mt-4 border-t border-cafe-brown/10 pt-4">
-      <p className="text-sm font-black text-cafe-brown/55">{title}</p>
-      <p className="mt-1 text-base font-bold leading-7 text-cafe-brown">{body}</p>
+    <div className="text-center">
+      <div className="relative mx-auto h-16 w-16 text-cafe-brown">
+        <span className="absolute inset-0 grid place-items-center text-6xl font-black leading-none">D</span>
+        <span className="absolute bottom-2 right-1 h-7 w-5 rotate-45 rounded-full bg-cafe-brown ring-2 ring-cafe-background" />
+      </div>
+      <p className="-mt-1 text-lg font-black">کافه دی</p>
     </div>
   );
 }
 
-function PrimaryButton({
+function DarkButton({
   children,
-  onClick
+  onClick,
+  icon,
+  disabled = false
 }: {
   children: React.ReactNode;
   onClick: () => void;
+  icon?: string;
+  disabled?: boolean;
 }) {
   return (
     <motion.button
       type="button"
-      whileTap={{ scale: 0.97 }}
+      whileTap={{ scale: disabled ? 1 : 0.97 }}
       onClick={onClick}
-      className="h-14 w-full rounded-2xl bg-cafe-brown px-5 text-base font-black text-white shadow-button"
+      disabled={disabled}
+      className="pill-button dark"
     >
-      {children}
+      <span>{children}</span>
+      {icon ? <span className="text-xl">{icon}</span> : null}
+    </motion.button>
+  );
+}
+
+function LightButton({
+  children,
+  onClick,
+  icon
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  icon?: string;
+}) {
+  return (
+    <motion.button type="button" whileTap={{ scale: 0.97 }} onClick={onClick} className="pill-button light">
+      <span>{icon}</span>
+      <span>{children}</span>
     </motion.button>
   );
 }
