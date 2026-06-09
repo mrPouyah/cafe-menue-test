@@ -21,4 +21,10 @@ This project is configured for static GitHub Pages hosting.
 4. Set `Build and deployment` -> `Source` to `GitHub Actions`.
 5. Push again or run the `Deploy to GitHub Pages` workflow manually.
 
-For a project repository, the app automatically uses `/<repo-name>` as its GitHub Pages base path during GitHub Actions builds. Local development still runs at `/`.
+For a project repository such as `cafe-menue-test`, the app automatically uses `/<repo-name>` as its GitHub Pages base path during GitHub Actions builds. Local development still runs at `/`.
+
+Expected public URL after deployment:
+
+```text
+https://YOUR_USERNAME.github.io/cafe-menue-test/
+```
