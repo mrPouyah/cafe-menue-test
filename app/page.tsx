@@ -49,6 +49,26 @@ export default function Home() {
   const goNext = () => setStepIndex((current) => Math.min(current + 1, 6));
   const goBack = () => setStepIndex((current) => Math.max(current - 1, 0));
 
+  const answerMood = (value: MoodChoice) => {
+    setAnswers((current) => ({ ...current, mood: value }));
+    goNext();
+  };
+
+  const answerFlavor = (value: FlavorChoice) => {
+    setAnswers((current) => ({ ...current, flavor: value }));
+    goNext();
+  };
+
+  const answerTemperature = (value: TempChoice) => {
+    setAnswers((current) => ({ ...current, temperature: value }));
+    goNext();
+  };
+
+  const answerBase = (value: BaseChoice) => {
+    setAnswers((current) => ({ ...current, base: value }));
+    goNext();
+  };
+
   const toggleExtra = (extra: string) => {
     setAnswers((current) => ({
       ...current,
@@ -79,11 +99,12 @@ export default function Home() {
                 canContinue={Boolean(answers.mood)}
                 onBack={goBack}
                 onNext={goNext}
+                hideNextButton
               >
                 <OptionList
                   options={moods}
                   selected={answers.mood}
-                  onSelect={(value) => setAnswers((current) => ({ ...current, mood: value }))}
+                  onSelect={answerMood}
                 />
               </QuestionScreen>
             )}
@@ -94,11 +115,12 @@ export default function Home() {
                 canContinue={Boolean(answers.flavor)}
                 onBack={goBack}
                 onNext={goNext}
+                hideNextButton
               >
                 <OptionList
                   options={flavors}
                   selected={answers.flavor}
-                  onSelect={(value) => setAnswers((current) => ({ ...current, flavor: value }))}
+                  onSelect={answerFlavor}
                   imageLike
                 />
               </QuestionScreen>
@@ -110,6 +132,7 @@ export default function Home() {
                 canContinue={Boolean(answers.temperature)}
                 onBack={goBack}
                 onNext={goNext}
+                hideNextButton
               >
                 <div className="grid gap-4">
                   {temperatures.map((option) => (
@@ -120,7 +143,7 @@ export default function Home() {
                       helper={option.helper}
                       selected={answers.temperature === option.value}
                       visual={option.value === "گرم" ? "hot" : "cold"}
-                      onClick={() => setAnswers((current) => ({ ...current, temperature: option.value }))}
+                      onClick={() => answerTemperature(option.value)}
                     />
                   ))}
                 </div>
@@ -133,6 +156,7 @@ export default function Home() {
                 canContinue={Boolean(answers.base)}
                 onBack={goBack}
                 onNext={goNext}
+                hideNextButton
               >
                 <div className="grid gap-3">
                   {bases.map((option) => (
@@ -140,7 +164,7 @@ export default function Home() {
                       key={option.value}
                       option={option}
                       selected={answers.base === option.value}
-                      onClick={() => setAnswers((current) => ({ ...current, base: option.value }))}
+                      onClick={() => answerBase(option.value)}
                     />
                   ))}
                 </div>
@@ -198,15 +222,15 @@ export default function Home() {
 function StartScreen({ onStart }: { onStart: () => void }) {
   return (
     <div className="relative flex min-h-full flex-col overflow-hidden rounded-[1.65rem] px-5 pb-5 pt-4">
-      <div className="mb-7 flex items-center justify-between text-xs font-black">
+      <div className="mb-7 flex items-center justify-between text-xs font-black text-cafe-goldLight/80">
         <span>9:41</span>
         <span className="tracking-[0.18em]">●●● ▰</span>
       </div>
       <div className="flex flex-1 flex-col items-center text-center">
         <LogoMark />
-        <h1 className="mt-12 text-[2.55rem] font-black leading-[1.18]">
+        <h1 className="mt-12 text-[2.55rem] leading-[1.25]">
           منوی هوشمند
-          <span className="block text-cafe-gold">کافه دی</span>
+          <span className="block text-gold-foil text-[3.1rem] leading-[1.1]">کافه دی</span>
         </h1>
         <div className="my-5 flex items-center gap-3 text-cafe-gold">
           <span className="h-px w-7 bg-cafe-gold/50" />
@@ -231,9 +255,9 @@ function StartScreen({ onStart }: { onStart: () => void }) {
           شروع
         </DarkButton>
         <div className="mt-5 flex justify-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-cafe-brown" />
-          <span className="h-2 w-2 rounded-full bg-cafe-brown/20" />
-          <span className="h-2 w-2 rounded-full bg-cafe-brown/20" />
+          <span className="h-2 w-2 rounded-full bg-cafe-gold" />
+          <span className="h-2 w-2 rounded-full bg-cafe-gold/25" />
+          <span className="h-2 w-2 rounded-full bg-cafe-gold/25" />
         </div>
       </div>
     </div>
@@ -249,7 +273,8 @@ function QuestionScreen({
   onBack,
   onNext,
   nextLabel = "بعدی",
-  nextIcon = "←"
+  nextIcon = "←",
+  hideNextButton = false
 }: {
   step: number;
   title: string;
@@ -260,6 +285,7 @@ function QuestionScreen({
   onNext: () => void;
   nextLabel?: string;
   nextIcon?: string;
+  hideNextButton?: boolean;
 }) {
   return (
     <div className="flex min-h-full flex-col px-5 pb-5 pt-6">
@@ -288,9 +314,13 @@ function QuestionScreen({
         ) : (
           <span />
         )}
-        <DarkButton onClick={onNext} disabled={!canContinue} icon={nextIcon}>
-          {nextLabel}
-        </DarkButton>
+        {!hideNextButton ? (
+          <DarkButton onClick={onNext} disabled={!canContinue} icon={nextIcon}>
+            {nextLabel}
+          </DarkButton>
+        ) : (
+          <span />
+        )}
       </footer>
     </div>
   );
@@ -302,7 +332,7 @@ function SegmentedProgress({ active }: { active: number }) {
       {Array.from({ length: questionCount }).map((_, index) => (
         <span
           key={index}
-          className={`h-1.5 flex-1 rounded-full ${index < active ? "bg-cafe-gold" : "bg-cafe-brown/12"}`}
+          className={`h-1.5 flex-1 rounded-full ${index < active ? "bg-cafe-gold" : "bg-cafe-gold/15"}`}
         />
       ))}
     </div>
@@ -481,11 +511,13 @@ function DrinkGlass({ visual, large = false }: { visual: Drink["visual"]; large?
 function LogoMark() {
   return (
     <div className="text-center">
-      <div className="relative mx-auto h-16 w-16 text-cafe-brown">
-        <span className="absolute inset-0 grid place-items-center text-6xl font-black leading-none">D</span>
-        <span className="absolute bottom-2 right-1 h-7 w-5 rotate-45 rounded-full bg-cafe-brown ring-2 ring-cafe-background" />
+      <div className="relative mx-auto h-16 w-16">
+        <span className="text-gold-foil absolute inset-0 grid place-items-center text-6xl font-black leading-none">
+          D
+        </span>
+        <span className="absolute bottom-2 right-1 h-7 w-5 rotate-45 rounded-full bg-gradient-to-br from-cafe-goldLight to-cafe-gold ring-2 ring-cafe-wood" />
       </div>
-      <p className="-mt-1 text-lg font-black">کافه دی</p>
+      <p className="-mt-1 text-lg text-cafe-goldLight">کافه دی</p>
     </div>
   );
 }

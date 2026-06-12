@@ -3,8 +3,16 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  background: #f4ede1;
+  color-scheme: dark;
+  background: #1a0e07;
+
+  /* Dark walnut wood-grain — layered SVG noise + warm streaks */
+  --wood-grain:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.012 0.85' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 0.18  0 0 0 0 0.10  0 0 0 0 0.05  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'><filter id='g'><feTurbulence type='turbulence' baseFrequency='0.006 0.5' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.30  0 0 0 0 0.16  0 0 0 0 0.07  0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
+
+  --wood-grain-light:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.014 0.9' numOctaves='3' seed='5'/><feColorMatrix values='0 0 0 0 0.28  0 0 0 0 0.16  0 0 0 0 0.07  0 0 0 0.42 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
 * {
@@ -20,17 +28,16 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(201, 162, 39, 0.16), transparent 32rem),
-    radial-gradient(circle at bottom right, rgba(75, 46, 31, 0.13), transparent 30rem),
-    linear-gradient(180deg, #f4ede1 0%, #efe4d3 100%);
-  color: #4b2e1f;
-  font-family:
-    "Vazirmatn",
-    "IRANSans",
-    "Tahoma",
-    "Segoe UI",
-    Arial,
-    sans-serif;
+    radial-gradient(circle at 50% -10%, rgba(212, 162, 74, 0.18), transparent 28rem),
+    radial-gradient(circle at 8% 90%, rgba(212, 162, 74, 0.08), transparent 24rem),
+    var(--wood-grain),
+    linear-gradient(180deg, #2a170d 0%, #150903 100%);
+  background-blend-mode: normal, normal, overlay, normal;
+  background-attachment: fixed;
+  color: #f1d8a6;
+  font-family: var(--font-vazirmatn), "Vazirmatn", "IRANSans", "Tahoma", "Segoe UI", Arial, sans-serif;
+  font-feature-settings: "ss01", "tnum";
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -39,25 +46,32 @@ input {
 }
 
 ::selection {
-  background: rgba(201, 162, 39, 0.35);
+  background: rgba(212, 162, 74, 0.45);
+  color: #1a0e07;
 }
 
 .safe-screen {
   min-height: 100svh;
 }
 
+/* The phone-shell becomes a carved wooden plank with a thin gold inlay */
 .app-shell {
   position: relative;
   width: min(100%, 390px);
   min-height: calc(100svh - 1.5rem);
   overflow: hidden;
-  border: 1px solid rgba(126, 91, 57, 0.17);
+  border: 1px solid rgba(212, 162, 74, 0.28);
   border-radius: 1.8rem;
   background:
-    radial-gradient(circle at 8% 10%, rgba(255, 255, 255, 0.95), transparent 12rem),
-    radial-gradient(circle at 96% 4%, rgba(255, 246, 224, 0.95), transparent 13rem),
-    linear-gradient(180deg, #fff8ed 0%, #f3e5d2 100%);
-  box-shadow: 0 24px 60px rgba(75, 46, 31, 0.16);
+    radial-gradient(circle at 12% 8%, rgba(232, 194, 117, 0.10), transparent 14rem),
+    radial-gradient(circle at 90% 96%, rgba(0, 0, 0, 0.35), transparent 16rem),
+    var(--wood-grain-light),
+    linear-gradient(165deg, #4b2a18 0%, #2a170d 55%, #1a0e07 100%);
+  background-blend-mode: normal, normal, overlay, normal;
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 162, 74, 0.10),
+    inset 0 1px 0 rgba(255, 220, 160, 0.10),
+    0 30px 70px rgba(0, 0, 0, 0.55);
 }
 
 .app-shell::before {
@@ -66,8 +80,23 @@ input {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, transparent 0 24%, rgba(255, 255, 255, 0.28) 44%, transparent 72%),
-    radial-gradient(circle at 50% 30%, rgba(201, 162, 39, 0.08), transparent 18rem);
+    /* Top warm glow like lamp light */
+    radial-gradient(ellipse at 50% -6%, rgba(232, 194, 117, 0.20), transparent 60%),
+    /* Subtle vertical "plank" seams */
+    linear-gradient(90deg, transparent 0 32%, rgba(0, 0, 0, 0.18) 33%, transparent 34%,
+                    transparent 66%, rgba(0, 0, 0, 0.18) 67%, transparent 68%),
+    /* Vignette */
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+.app-shell::after {
+  /* gold inlay rim */
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(212, 162, 74, 0.22);
+  pointer-events: none;
 }
 
 .app-shell > section {
@@ -85,13 +114,14 @@ input {
   width: 44px;
   height: 44px;
   place-items: center;
-  border: 1px solid rgba(75, 46, 31, 0.13);
+  border: 1px solid rgba(212, 162, 74, 0.30);
   border-radius: 999px;
-  background: rgba(255, 250, 241, 0.72);
-  color: #4b2e1f;
+  background: rgba(20, 10, 5, 0.55);
+  color: #e8c275;
   font-size: 1.7rem;
   font-weight: 900;
-  box-shadow: 0 8px 18px rgba(75, 46, 31, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 220, 160, 0.06), 0 6px 14px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
 }
 
 .round-mini {
@@ -100,10 +130,11 @@ input {
   height: 34px;
   place-items: center;
   border-radius: 999px;
-  background: #c9a227;
-  color: #fff;
+  background: linear-gradient(145deg, #e8c275 0%, #b07e1f 100%);
+  color: #1a0e07;
   font-size: 1.1rem;
   font-weight: 900;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
 .pill-button {
@@ -115,21 +146,35 @@ input {
   gap: 0.75rem;
   border-radius: 999px;
   padding: 0 1.25rem;
-  font-weight: 950;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   transition: transform 160ms ease, opacity 160ms ease, box-shadow 160ms ease;
 }
 
+/* primary CTA: brushed-gold pill */
 .pill-button.dark {
-  background: linear-gradient(135deg, #321a0e 0%, #5b321d 100%);
-  color: white;
-  box-shadow: 0 16px 30px rgba(75, 46, 31, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 235, 180, 0.35) 0 50%, transparent 50%),
+    linear-gradient(135deg, #e8c275 0%, #c79534 55%, #8a5e15 100%);
+  color: #1a0e07;
+  border: 1px solid rgba(255, 220, 160, 0.35);
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.55),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+    0 16px 30px rgba(0, 0, 0, 0.55);
 }
 
+/* secondary: dark wooden pill */
 .pill-button.light {
-  border: 1px solid rgba(126, 91, 57, 0.16);
-  background: rgba(255, 248, 236, 0.88);
-  color: #4b2e1f;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45), 0 12px 22px rgba(75, 46, 31, 0.08);
+  border: 1px solid rgba(212, 162, 74, 0.25);
+  background:
+    linear-gradient(180deg, rgba(255, 220, 160, 0.05), transparent 60%),
+    linear-gradient(145deg, #3a1f11, #25130a);
+  color: #f1d8a6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 160, 0.10),
+    0 12px 22px rgba(0, 0, 0, 0.55);
 }
 
 .pill-button:disabled {
@@ -145,11 +190,18 @@ input {
 .glass-panel,
 .similar-card,
 .ingredients-card {
-  border: 1px solid rgba(126, 91, 57, 0.2);
+  position: relative;
+  border: 1px solid rgba(212, 162, 74, 0.18);
   background:
-    linear-gradient(145deg, rgba(255, 253, 247, 0.86), rgba(246, 234, 215, 0.72)),
-    rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 10px 20px rgba(75, 46, 31, 0.06);
+    linear-gradient(160deg, rgba(255, 220, 160, 0.06), transparent 60%),
+    var(--wood-grain-light),
+    linear-gradient(145deg, #3a1f11 0%, #25130a 100%);
+  background-blend-mode: normal, overlay, normal;
+  color: #f1d8a6;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 220, 160, 0.10),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 10px 22px rgba(0, 0, 0, 0.45);
 }
 
 .choice-card {
@@ -168,8 +220,13 @@ input {
 .base-card.selected,
 .visual-card.selected,
 .extra-card.selected {
-  border-color: rgba(201, 162, 39, 0.72);
-  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.34), 0 15px 26px rgba(75, 46, 31, 0.11);
+  border-color: rgba(232, 194, 117, 0.75);
+  color: #fbe7b8;
+  box-shadow:
+    inset 0 0 0 1px rgba(232, 194, 117, 0.55),
+    inset 0 1px 0 rgba(255, 235, 180, 0.18),
+    0 0 0 3px rgba(212, 162, 74, 0.12),
+    0 16px 28px rgba(0, 0, 0, 0.55);
 }
 
 .ingredient-visual {
@@ -179,9 +236,11 @@ input {
   place-items: center;
   border-radius: 0.9rem;
   background:
-    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.8), transparent 36%),
-    linear-gradient(145deg, #fff3da, #e4c48a);
+    radial-gradient(circle at 30% 25%, rgba(255, 230, 170, 0.55), transparent 36%),
+    linear-gradient(145deg, #c79534, #6f4811);
+  color: #1a0e07;
   font-size: 2rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 230, 170, 0.35), 0 4px 10px rgba(0, 0, 0, 0.45);
 }
 
 .visual-card {
@@ -265,17 +324,18 @@ input {
   width: 24px;
   height: 24px;
   place-items: center;
-  border: 1px solid rgba(75, 46, 31, 0.18);
+  border: 1px solid rgba(212, 162, 74, 0.30);
   border-radius: 999px;
-  background: rgba(255, 252, 246, 0.78);
-  color: white;
+  background: rgba(20, 10, 5, 0.55);
+  color: #1a0e07;
   font-size: 0.78rem;
   font-weight: 950;
 }
 
 .extra-card.selected .check-dot {
-  border-color: #c9a227;
-  background: #c9a227;
+  border-color: #e8c275;
+  background: linear-gradient(145deg, #e8c275, #b07e1f);
+  color: #1a0e07;
 }
 
 .coffee-hero {
@@ -366,10 +426,14 @@ input {
   overflow: hidden;
   border-radius: 1.65rem;
   background:
-    radial-gradient(circle at 18% 88%, rgba(75, 46, 31, 0.24), transparent 9rem),
-    radial-gradient(circle at 38% 24%, rgba(201, 162, 39, 0.2), transparent 13rem),
-    linear-gradient(145deg, #d6a96c, #fff5e6 68%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    radial-gradient(circle at 50% 28%, rgba(232, 194, 117, 0.28), transparent 10rem),
+    radial-gradient(circle at 18% 92%, rgba(0, 0, 0, 0.55), transparent 11rem),
+    var(--wood-grain),
+    linear-gradient(160deg, #4b2a18 0%, #2a170d 55%, #150903 100%);
+  background-blend-mode: normal, normal, overlay, normal;
+  box-shadow:
+    inset 0 0 0 1px rgba(212, 162, 74, 0.20),
+    inset 0 0 80px rgba(0, 0, 0, 0.55);
 }
 
 .drink-glass {
@@ -489,24 +553,32 @@ input {
 }
 
 .result-copy {
-  color: #4b2e1f;
+  color: #f1d8a6;
 }
 
 .result-copy p,
-.result-copy h2,
 .result-copy h3,
 .glass-panel p,
 .similar-card h3,
 .ingredients-card {
-  color: #4b2e1f;
+  color: #f1d8a6;
+}
+
+.result-copy h2 {
+  color: #f3e1b7;
+  font-family: var(--font-gulzar), var(--font-vazirmatn), serif;
+  letter-spacing: 0.005em;
 }
 
 .glass-panel,
 .similar-card,
 .ingredients-card {
   background:
-    linear-gradient(145deg, rgba(255, 253, 247, 0.96), rgba(248, 238, 222, 0.88)),
-    rgba(255, 255, 255, 0.88);
+    linear-gradient(160deg, rgba(255, 220, 160, 0.06), transparent 60%),
+    var(--wood-grain-light),
+    linear-gradient(145deg, rgba(58, 31, 17, 0.92), rgba(26, 14, 7, 0.92));
+  background-blend-mode: normal, overlay, normal;
+  backdrop-filter: blur(10px);
 }
 
 .similar-card {
@@ -535,4 +607,36 @@ input {
     width: 198px;
     height: 288px;
   }
+}
+
+/* ---------- Display typography (calligraphic Persian) ---------- */
+h1,
+h2 {
+  font-family: var(--font-gulzar), var(--font-vazirmatn), "Vazirmatn", serif;
+  font-weight: 400;
+  letter-spacing: 0;
+  /* warm engraved gold */
+  color: #f3e1b7;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 0 22px rgba(212, 162, 74, 0.10);
+}
+
+/* gilt accent class — reuse on key words */
+.text-gold-foil {
+  background: linear-gradient(180deg, #fce29a 0%, #d4a24a 45%, #8a5e15 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Override Tailwind's gold accent token to the warmer one */
+.text-cafe-gold {
+  color: #e8c275 !important;
+}
+
+/* Soften the very aggressive font-black weights against gold-on-wood */
+.font-black,
+.font-extrabold {
+  font-weight: 700;
 }
