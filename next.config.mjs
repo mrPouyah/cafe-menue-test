@@ -13,6 +13,9 @@ const nextConfig = {
   output: "export",
   basePath: pagesBasePath || undefined,
   assetPrefix: pagesBasePath || undefined,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: pagesBasePath || ""
+  },
   images: {
     unoptimized: true
   },

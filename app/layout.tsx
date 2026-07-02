@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Vazirmatn, Gulzar } from "next/font/google";
+import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -7,13 +7,6 @@ const vazirmatn = Vazirmatn({
   weight: ["300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
   variable: "--font-vazirmatn"
-});
-
-const gulzar = Gulzar({
-  subsets: ["arabic", "latin"],
-  weight: ["400"],
-  display: "swap",
-  variable: "--font-gulzar"
 });
 
 export const metadata: Metadata = {
@@ -24,7 +17,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#2A170D"
+  themeColor: "#FBF9F6"
 };
 
 export default function RootLayout({
@@ -32,9 +25,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
   return (
-    <html lang="fa" dir="rtl" className={`${vazirmatn.variable} ${gulzar.variable}`}>
-      <body>{children}</body>
+    <html lang="fa" dir="rtl" className={vazirmatn.variable}>
+      <body
+        style={{ "--cafe-photo": `url(${basePath}/images/cafe-background.jpg)` } as React.CSSProperties}
+      >
+        {children}
+      </body>
     </html>
   );
 }

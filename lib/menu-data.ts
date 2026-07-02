@@ -8,12 +8,12 @@ export const moods = [
 ] as const;
 
 export const flavors = [
-  { label: "شکلاتی", value: "شکلاتی", icon: "🍫" },
-  { label: "کاراملی", value: "کاراملی", icon: "🟫" },
-  { label: "فندقی", value: "فندقی", icon: "🌰" },
-  { label: "وانیلی", value: "وانیلی", icon: "🍦" },
-  { label: "میوه‌ای", value: "میوه‌ای", icon: "🍓" },
-  { label: "کلاسیک", value: "کلاسیک", icon: "☕" }
+  { label: "شکلاتی", value: "شکلاتی", icon: "🍫", photo: "chocolate" },
+  { label: "کاراملی", value: "کاراملی", icon: "🟫", photo: "caramel" },
+  { label: "فندقی", value: "فندقی", icon: "🌰", photo: "hazelnut" },
+  { label: "وانیلی", value: "وانیلی", icon: "🍦", photo: "vanilla" },
+  { label: "میوه‌ای", value: "میوه‌ای", icon: "🍓", photo: "fruity" },
+  { label: "کلاسیک", value: "کلاسیک", icon: "☕", photo: "classic" }
 ] as const;
 
 export const temperatures = [
@@ -28,12 +28,12 @@ export const bases = [
 ] as const;
 
 export const extras = [
-  { label: "خامه", icon: "🍦" },
-  { label: "کارامل", icon: "〰️" },
-  { label: "فندق", icon: "🌰" },
-  { label: "وانیل", icon: "🌼" },
-  { label: "دارچین", icon: "🪵" },
-  { label: "شات اضافه", icon: "☕" }
+  { label: "خامه", icon: "🍦", photo: "extras/cream" },
+  { label: "کارامل", icon: "〰️", photo: "flavors/caramel" },
+  { label: "فندق", icon: "🌰", photo: "flavors/hazelnut" },
+  { label: "وانیل", icon: "🌼", photo: "flavors/vanilla" },
+  { label: "دارچین", icon: "🪵", photo: "extras/cinnamon" },
+  { label: "شات اضافه", icon: "☕", photo: "extras/espresso" }
 ] as const;
 
 export type MoodChoice = (typeof moods)[number]["value"];

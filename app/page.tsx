@@ -17,6 +17,39 @@ import {
   temperatures
 } from "@/lib/menu-data";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const drinkPhoto = (visual: Drink["visual"]) => `${BASE_PATH}/images/drinks/${visual}.jpg`;
+
+let sharedAudioCtx: AudioContext | null = null;
+
+function playSelectFeedback() {
+  if (typeof window === "undefined") return;
+  if ("vibrate" in navigator) navigator.vibrate(12);
+  try {
+    const Ctor =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) return;
+    sharedAudioCtx = sharedAudioCtx ?? new Ctor();
+    const ctx = sharedAudioCtx;
+    if (ctx.state === "suspended") void ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const now = ctx.currentTime;
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(1150, now);
+    osc.frequency.exponentialRampToValueAtTime(520, now + 0.07);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  } catch {
+    // audio unavailable — selection still works silently
+  }
+}
+
 type Answers = {
   mood?: MoodChoice;
   flavor?: FlavorChoice;
@@ -50,26 +83,31 @@ export default function Home() {
   const goBack = () => setStepIndex((current) => Math.max(current - 1, 0));
 
   const answerMood = (value: MoodChoice) => {
+    playSelectFeedback();
     setAnswers((current) => ({ ...current, mood: value }));
     goNext();
   };
 
   const answerFlavor = (value: FlavorChoice) => {
+    playSelectFeedback();
     setAnswers((current) => ({ ...current, flavor: value }));
     goNext();
   };
 
   const answerTemperature = (value: TempChoice) => {
+    playSelectFeedback();
     setAnswers((current) => ({ ...current, temperature: value }));
     goNext();
   };
 
   const answerBase = (value: BaseChoice) => {
+    playSelectFeedback();
     setAnswers((current) => ({ ...current, base: value }));
     goNext();
   };
 
   const toggleExtra = (extra: string) => {
+    playSelectFeedback();
     setAnswers((current) => ({
       ...current,
       extras: current.extras.includes(extra)
@@ -79,7 +117,7 @@ export default function Home() {
   };
 
   return (
-    <main className="safe-screen flex items-center justify-center bg-cafe-background px-2 py-3 text-cafe-brown sm:px-4">
+    <main className="safe-screen flex items-center justify-center px-2 py-3 text-cafe-cream sm:px-4">
       <div className={`app-shell ${stepIndex === 6 ? "result-shell" : ""}`}>
         <AnimatePresence mode="wait">
           <motion.section
@@ -192,7 +230,10 @@ export default function Home() {
                         className={`extra-card ${isSelected ? "selected" : ""}`}
                       >
                         <span className="check-dot">{isSelected ? "✓" : ""}</span>
-                        <span className="text-4xl">{extra.icon}</span>
+                        <span
+                          className="extra-photo"
+                          style={{ backgroundImage: `url(${BASE_PATH}/images/${extra.photo}.jpg)` }}
+                        />
                         <span className="text-sm font-black">{extra.label}</span>
                       </button>
                     );
@@ -237,18 +278,16 @@ function StartScreen({ onStart }: { onStart: () => void }) {
           <span className="text-2xl">☕</span>
           <span className="h-px w-7 bg-cafe-gold/50" />
         </div>
-        <p className="max-w-64 text-base font-bold leading-8 text-cafe-brown/80">
+        <p className="max-w-64 text-base font-bold leading-8 text-cafe-cream/90">
           چند سؤال کوتاه جواب بده تا نوشیدنی مناسب تو رو پیدا کنیم.
         </p>
         <span className="mt-3 text-2xl text-cafe-gold">♡</span>
       </div>
       <div className="coffee-hero" aria-hidden="true">
-        <span className="bean bean-one" />
-        <span className="bean bean-two" />
-        <span className="bean bean-three" />
-        <div className="latte-cup">
-          <span className="latte-art" />
-        </div>
+        <div
+          className="hero-photo"
+          style={{ backgroundImage: `url(${BASE_PATH}/images/drinks/hero.jpg)` }}
+        />
       </div>
       <div className="relative z-10 mt-auto">
         <DarkButton onClick={onStart} icon="←">
@@ -302,7 +341,7 @@ function QuestionScreen({
       </header>
       <div className="mb-5 text-center">
         <h2 className="text-[1.72rem] font-black leading-tight">{title}</h2>
-        {subtitle ? <p className="mt-2 text-sm font-bold text-cafe-brown/70">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-2 text-sm font-bold text-cafe-cream/85">{subtitle}</p> : null}
         <p className="mt-3 text-2xl text-cafe-gold">♡</p>
       </div>
       <div className="flex-1">{children}</div>
@@ -345,7 +384,7 @@ function OptionList<T extends string>({
   onSelect,
   imageLike = false
 }: {
-  options: readonly { label: string; value: T; icon: string }[];
+  options: readonly { label: string; value: T; icon: string; photo?: string }[];
   selected?: T;
   onSelect: (value: T) => void;
   imageLike?: boolean;
@@ -362,7 +401,14 @@ function OptionList<T extends string>({
           onClick={() => onSelect(option.value)}
           className={`choice-card ${selected === option.value ? "selected" : ""}`}
         >
-          <span className={imageLike ? "ingredient-visual" : "text-3xl"}>{option.icon}</span>
+          {option.photo ? (
+            <span
+              className="option-photo"
+              style={{ backgroundImage: `url(${BASE_PATH}/images/flavors/${option.photo}.jpg)` }}
+            />
+          ) : (
+            <span className={imageLike ? "ingredient-visual" : "text-3xl"}>{option.icon}</span>
+          )}
           <span className="text-base font-black">{option.label}</span>
         </motion.button>
       ))}
@@ -387,14 +433,15 @@ function VisualChoice({
 }) {
   return (
     <button type="button" onClick={onClick} className={`visual-card ${selected ? "selected" : ""}`}>
-      <div className={`temperature-art ${visual}`}>
-        <span className="drink-shape" />
-      </div>
+      <div
+        className="temperature-art"
+        style={{ backgroundImage: `url(${BASE_PATH}/images/temps/${visual}.jpg)` }}
+      />
       <div>
         <p className="text-lg font-black">
           {label} <span>{icon}</span>
         </p>
-        <p className="mt-1 text-xs font-bold text-cafe-brown/55">{helper}</p>
+        <p className="mt-1 text-xs font-bold text-cafe-cream/75">{helper}</p>
       </div>
     </button>
   );
@@ -414,7 +461,7 @@ function BaseChoiceCard({
       <span className="ingredient-visual">{option.icon}</span>
       <span>
         <span className="block text-base font-black">{option.label}</span>
-        <span className="mt-1 block text-xs font-bold text-cafe-brown/55">{option.helper}</span>
+        <span className="mt-1 block text-xs font-bold text-cafe-cream/75">{option.helper}</span>
       </span>
     </button>
   );
@@ -442,9 +489,9 @@ function ResultScreen({
   const ingredients = Array.from(new Set([...drink.ingredients, ...selectedExtras]));
 
   return (
-    <div className="grid min-h-full gap-4 p-4 lg:grid-cols-[1fr_1.1fr]">
+    <div className="grid min-h-full gap-4 p-4">
       <div className="result-photo">
-        <button type="button" aria-label="علاقه‌مندی" className="round-icon absolute right-4 top-4 z-20 bg-white/90">
+        <button type="button" aria-label="علاقه‌مندی" className="round-icon absolute right-4 top-4 z-20 bg-white/90 text-cafe-gold">
           ♡
         </button>
         <DrinkGlass visual={drink.visual} large />
@@ -460,8 +507,8 @@ function ResultScreen({
       <div className="result-copy flex flex-col gap-4 rounded-[1.7rem] p-2">
         <div className="pt-4 text-center lg:text-right">
           <p className="text-base font-black">✨ پیشنهاد باریستا برای شما</p>
-          <h2 className="mt-4 text-[2.45rem] font-black leading-tight text-cafe-brown">{drink.name}</h2>
-          <p className="mt-3 text-base font-bold leading-7 text-cafe-brown">
+          <h2 className="mt-4 text-[2.45rem] font-black leading-tight">{drink.name}</h2>
+          <p className="mt-3 text-base font-bold leading-7 text-cafe-cream/90">
             ترکیبی خوش‌طعم و انرژی‌بخش از {drink.ingredients.slice(0, 3).join("، ")}
           </p>
         </div>
@@ -499,12 +546,11 @@ function ResultScreen({
 
 function DrinkGlass({ visual, large = false }: { visual: Drink["visual"]; large?: boolean }) {
   return (
-    <div className={`drink-glass ${visual} ${large ? "large" : ""}`} aria-hidden="true">
-      <span className="ice ice-one" />
-      <span className="ice ice-two" />
-      <span className="cream-line" />
-      <span className="caramel-line" />
-    </div>
+    <div
+      className={`drink-glass ${large ? "large" : ""}`}
+      style={{ backgroundImage: `url(${drinkPhoto(visual)})` }}
+      aria-hidden="true"
+    />
   );
 }
 
