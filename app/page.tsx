@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BaseChoice,
   Drink,
@@ -19,6 +19,49 @@ import {
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const drinkPhoto = (visual: Drink["visual"]) => `${BASE_PATH}/images/drinks/${visual}.jpg`;
+const ORDER_WEBHOOK_URL = process.env.NEXT_PUBLIC_ORDER_WEBHOOK_URL ?? "";
+
+const moodItems = moods;
+const flavorItems = flavors.map((flavor) => ({
+  value: flavor.value,
+  label: flavor.label,
+  icon: flavor.icon,
+  photoUrl: `${BASE_PATH}/images/flavors/${flavor.photo}.jpg`
+}));
+const temperatureItems = temperatures.map((temperature) => ({
+  value: temperature.value,
+  label: temperature.label,
+  icon: temperature.icon,
+  helper: temperature.helper,
+  photoUrl: `${BASE_PATH}/images/temps/${temperature.value === "گرم" ? "hot" : "cold"}.jpg`
+}));
+const baseItems = bases.map((base) => ({
+  value: base.value,
+  label: base.label,
+  icon: base.icon,
+  helper: base.helper
+}));
+const extraItems = extras.map((extra) => ({
+  value: extra.label,
+  label: extra.label,
+  icon: extra.icon,
+  photoUrl: `${BASE_PATH}/images/${extra.photo}.jpg`
+}));
+
+async function sendOrderNotification(name: string, drink: string) {
+  if (!ORDER_WEBHOOK_URL) {
+    console.warn("Order webhook not configured — skipping notification.");
+    return;
+  }
+  const response = await fetch(ORDER_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, drink })
+  });
+  if (!response.ok) {
+    throw new Error("Failed to send order notification");
+  }
+}
 
 let sharedAudioCtx: AudioContext | null = null;
 
@@ -66,17 +109,41 @@ const screenVariants = {
   exit: { opacity: 0, x: 18, scale: 0.985 }
 };
 
+type OrderPhase = "idle" | "name" | "sending" | "error" | "done";
+
 export default function Home() {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({ extras: [] });
-  const [ordered, setOrdered] = useState(false);
+  const [orderPhase, setOrderPhase] = useState<OrderPhase>("idle");
+  const [customerName, setCustomerName] = useState("");
   const result = useMemo(() => recommendDrink(answers), [answers]);
   const similar = useMemo(() => findSimilarDrink(result.drink), [result.drink]);
 
   const restart = () => {
     setStepIndex(0);
     setAnswers({ extras: [] });
-    setOrdered(false);
+    setOrderPhase("idle");
+    setCustomerName("");
+  };
+
+  const openOrderModal = () => {
+    if (orderPhase === "idle") setOrderPhase("name");
+  };
+
+  const cancelOrderModal = () => {
+    setOrderPhase("idle");
+  };
+
+  const submitOrder = async () => {
+    const trimmedName = customerName.trim();
+    if (!trimmedName) return;
+    setOrderPhase("sending");
+    try {
+      await sendOrderNotification(trimmedName, result.drink.name);
+      setOrderPhase("done");
+    } catch {
+      setOrderPhase("error");
+    }
   };
 
   const goNext = () => setStepIndex((current) => Math.min(current + 1, 6));
@@ -139,11 +206,7 @@ export default function Home() {
                 onNext={goNext}
                 hideNextButton
               >
-                <OptionList
-                  options={moods}
-                  selected={answers.mood}
-                  onSelect={answerMood}
-                />
+                <WheelPicker items={moodItems} selected={answers.mood} onSelect={answerMood} itemHeight={72} />
               </QuestionScreen>
             )}
             {stepIndex === 2 && (
@@ -155,12 +218,7 @@ export default function Home() {
                 onNext={goNext}
                 hideNextButton
               >
-                <OptionList
-                  options={flavors}
-                  selected={answers.flavor}
-                  onSelect={answerFlavor}
-                  imageLike
-                />
+                <WheelPicker items={flavorItems} selected={answers.flavor} onSelect={answerFlavor} itemHeight={84} />
               </QuestionScreen>
             )}
             {stepIndex === 3 && (
@@ -172,19 +230,12 @@ export default function Home() {
                 onNext={goNext}
                 hideNextButton
               >
-                <div className="grid gap-4">
-                  {temperatures.map((option) => (
-                    <VisualChoice
-                      key={option.value}
-                      icon={option.icon}
-                      label={option.label}
-                      helper={option.helper}
-                      selected={answers.temperature === option.value}
-                      visual={option.value === "گرم" ? "hot" : "cold"}
-                      onClick={() => answerTemperature(option.value)}
-                    />
-                  ))}
-                </div>
+                <WheelPicker
+                  items={temperatureItems}
+                  selected={answers.temperature}
+                  onSelect={answerTemperature}
+                  itemHeight={88}
+                />
               </QuestionScreen>
             )}
             {stepIndex === 4 && (
@@ -196,16 +247,7 @@ export default function Home() {
                 onNext={goNext}
                 hideNextButton
               >
-                <div className="grid gap-3">
-                  {bases.map((option) => (
-                    <BaseChoiceCard
-                      key={option.value}
-                      option={option}
-                      selected={answers.base === option.value}
-                      onClick={() => answerBase(option.value)}
-                    />
-                  ))}
-                </div>
+                <WheelPicker items={baseItems} selected={answers.base} onSelect={answerBase} itemHeight={88} />
               </QuestionScreen>
             )}
             {stepIndex === 5 && (
@@ -219,26 +261,7 @@ export default function Home() {
                 nextLabel="دیدن پیشنهاد باریستا"
                 nextIcon="☕"
               >
-                <div className="grid grid-cols-2 gap-3">
-                  {extras.map((extra) => {
-                    const isSelected = answers.extras.includes(extra.label);
-                    return (
-                      <button
-                        type="button"
-                        key={extra.label}
-                        onClick={() => toggleExtra(extra.label)}
-                        className={`extra-card ${isSelected ? "selected" : ""}`}
-                      >
-                        <span className="check-dot">{isSelected ? "✓" : ""}</span>
-                        <span
-                          className="extra-photo"
-                          style={{ backgroundImage: `url(${BASE_PATH}/images/${extra.photo}.jpg)` }}
-                        />
-                        <span className="text-sm font-black">{extra.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                <WheelPicker items={extraItems} selected={answers.extras} onSelect={toggleExtra} itemHeight={84} multi />
               </QuestionScreen>
             )}
             {stepIndex === 6 && (
@@ -248,8 +271,12 @@ export default function Home() {
                 matchedParts={result.matchedParts}
                 reason={result.reason}
                 selectedExtras={answers.extras}
-                ordered={ordered}
-                onOrder={() => setOrdered(true)}
+                orderPhase={orderPhase}
+                customerName={customerName}
+                onOrderClick={openOrderModal}
+                onNameChange={setCustomerName}
+                onSubmitOrder={submitOrder}
+                onCancelOrder={cancelOrderModal}
                 onRestart={restart}
               />
             )}
@@ -378,92 +405,194 @@ function SegmentedProgress({ active }: { active: number }) {
   );
 }
 
-function OptionList<T extends string>({
-  options,
+type WheelOption<T extends string> = {
+  value: T;
+  label: string;
+  icon?: string;
+  helper?: string;
+  photoUrl?: string;
+};
+
+function WheelPicker<T extends string>({
+  items,
   selected,
   onSelect,
-  imageLike = false
+  itemHeight = 78,
+  multi = false
 }: {
-  options: readonly { label: string; value: T; icon: string; photo?: string }[];
-  selected?: T;
+  items: readonly WheelOption<T>[];
+  selected: T | T[] | undefined;
   onSelect: (value: T) => void;
-  imageLike?: boolean;
+  itemHeight?: number;
+  multi?: boolean;
 }) {
-  return (
-    <div className="grid gap-3">
-      {options.map((option, index) => (
-        <motion.button
-          type="button"
-          key={option.value}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.035 }}
-          onClick={() => onSelect(option.value)}
-          className={`choice-card ${selected === option.value ? "selected" : ""}`}
-        >
-          {option.photo ? (
-            <span
-              className="option-photo"
-              style={{ backgroundImage: `url(${BASE_PATH}/images/flavors/${option.photo}.jpg)` }}
-            />
-          ) : (
-            <span className={imageLike ? "ingredient-visual" : "text-3xl"}>{option.icon}</span>
-          )}
-          <span className="text-base font-black">{option.label}</span>
-        </motion.button>
-      ))}
-    </div>
-  );
-}
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const rafId = useRef<number | null>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userInteracted = useRef(false);
+  const draggingThumb = useRef(false);
+  const initialized = useRef(false);
+  const initialIndex = items.findIndex((item) => item.value === selected);
+  const lastFiredIndexRef = useRef(initialIndex >= 0 ? initialIndex : 0);
+  const [padding, setPadding] = useState(0);
 
-function VisualChoice({
-  icon,
-  label,
-  helper,
-  selected,
-  visual,
-  onClick
-}: {
-  icon: string;
-  label: string;
-  helper: string;
-  selected: boolean;
-  visual: "hot" | "cold";
-  onClick: () => void;
-}) {
+  const isSelected = (value: T) => (multi ? Array.isArray(selected) && selected.includes(value) : selected === value);
+
+  const applyTransforms = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const offset = container.scrollTop / itemHeight;
+    itemRefs.current.forEach((el, index) => {
+      if (!el) return;
+      const distance = index - offset;
+      const abs = Math.min(Math.abs(distance), 3);
+      const scale = 1 - abs * 0.14;
+      const opacity = Math.max(1 - abs * 0.32, 0.18);
+      el.style.transform = `perspective(600px) rotateX(${distance * 16}deg) scale(${scale})`;
+      el.style.opacity = String(opacity);
+    });
+    const track = trackRef.current;
+    const thumb = thumbRef.current;
+    if (track && thumb) {
+      const scrollableHeight = container.scrollHeight - container.clientHeight;
+      const trackHeight = track.clientHeight;
+      const thumbHeight = Math.max((container.clientHeight / container.scrollHeight) * trackHeight, 24);
+      const progress = scrollableHeight > 0 ? container.scrollTop / scrollableHeight : 0;
+      thumb.style.height = `${thumbHeight}px`;
+      thumb.style.transform = `translateY(${progress * (trackHeight - thumbHeight)}px)`;
+    }
+  };
+
+  const settleTo = (index: number) => {
+    const clamped = Math.min(Math.max(index, 0), items.length - 1);
+    if (!multi && clamped !== lastFiredIndexRef.current) {
+      lastFiredIndexRef.current = clamped;
+      onSelect(items[clamped].value);
+    }
+  };
+
+  const handleScroll = () => {
+    if (rafId.current) cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(applyTransforms);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      const container = containerRef.current;
+      if (!container || !userInteracted.current) return;
+      settleTo(Math.round(container.scrollTop / itemHeight));
+    }, 130);
+  };
+
+  const scrollToIndex = (index: number, smooth = true) => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.scrollTo({ top: index * itemHeight, behavior: smooth ? "smooth" : "auto" });
+  };
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => setPadding(Math.max((el.clientHeight - itemHeight) / 2, 0));
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [itemHeight]);
+
+  useEffect(() => {
+    if (initialized.current || padding <= 0) return;
+    scrollToIndex(lastFiredIndexRef.current, false);
+    applyTransforms();
+    initialized.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [padding]);
+
+  const handleThumbPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    draggingThumb.current = true;
+    userInteracted.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleThumbPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingThumb.current) return;
+    const container = containerRef.current;
+    const track = trackRef.current;
+    if (!container || !track) return;
+    const rect = track.getBoundingClientRect();
+    const ratio = Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1);
+    const scrollableHeight = container.scrollHeight - container.clientHeight;
+    container.scrollTop = ratio * scrollableHeight;
+    applyTransforms();
+  };
+
+  const handleThumbPointerUp = () => {
+    if (!draggingThumb.current) return;
+    draggingThumb.current = false;
+    const container = containerRef.current;
+    if (!container) return;
+    const nearest = Math.round(container.scrollTop / itemHeight);
+    scrollToIndex(nearest);
+    settleTo(nearest);
+  };
+
   return (
-    <button type="button" onClick={onClick} className={`visual-card ${selected ? "selected" : ""}`}>
+    <div className="wheel-wrap">
       <div
-        className="temperature-art"
-        style={{ backgroundImage: `url(${BASE_PATH}/images/temps/${visual}.jpg)` }}
-      />
-      <div>
-        <p className="text-lg font-black">
-          {label} <span>{icon}</span>
-        </p>
-        <p className="mt-1 text-xs font-bold text-cafe-cream/75">{helper}</p>
+        className="wheel-picker"
+        ref={containerRef}
+        onScroll={handleScroll}
+        onPointerDown={() => {
+          userInteracted.current = true;
+        }}
+        onWheel={() => {
+          userInteracted.current = true;
+        }}
+        style={{ paddingTop: padding, paddingBottom: padding }}
+      >
+        {items.map((item, index) => (
+          <button
+            type="button"
+            key={item.value}
+            ref={(el) => {
+              itemRefs.current[index] = el;
+            }}
+            className={`wheel-item ${isSelected(item.value) ? "selected" : ""}`}
+            style={{ height: itemHeight }}
+            onClick={() => {
+              scrollToIndex(index);
+              lastFiredIndexRef.current = index;
+              onSelect(item.value);
+            }}
+          >
+            {item.photoUrl ? (
+              <span className="wheel-photo" style={{ backgroundImage: `url(${item.photoUrl})` }} />
+            ) : (
+              <span className="ingredient-visual">{item.icon}</span>
+            )}
+            <span className="wheel-text">
+              <span className="wheel-label">{item.label}</span>
+              {item.helper ? <span className="wheel-helper">{item.helper}</span> : null}
+            </span>
+            {multi ? <span className="wheel-check">{isSelected(item.value) ? "✓" : ""}</span> : null}
+          </button>
+        ))}
       </div>
-    </button>
-  );
-}
-
-function BaseChoiceCard({
-  option,
-  selected,
-  onClick
-}: {
-  option: (typeof bases)[number];
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button type="button" onClick={onClick} className={`base-card ${selected ? "selected" : ""}`}>
-      <span className="ingredient-visual">{option.icon}</span>
-      <span>
-        <span className="block text-base font-black">{option.label}</span>
-        <span className="mt-1 block text-xs font-bold text-cafe-cream/75">{option.helper}</span>
-      </span>
-    </button>
+      <div className="wheel-frame" style={{ height: itemHeight }} aria-hidden="true" />
+      <div className="wheel-track" ref={trackRef}>
+        <div
+          className="wheel-thumb-hit"
+          ref={thumbRef}
+          onPointerDown={handleThumbPointerDown}
+          onPointerMove={handleThumbPointerMove}
+          onPointerUp={handleThumbPointerUp}
+        >
+          <div className="wheel-thumb-bar" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -473,8 +602,12 @@ function ResultScreen({
   matchedParts,
   reason,
   selectedExtras,
-  ordered,
-  onOrder,
+  orderPhase,
+  customerName,
+  onOrderClick,
+  onNameChange,
+  onSubmitOrder,
+  onCancelOrder,
   onRestart
 }: {
   drink: Drink;
@@ -482,8 +615,12 @@ function ResultScreen({
   matchedParts: string[];
   reason: string;
   selectedExtras: string[];
-  ordered: boolean;
-  onOrder: () => void;
+  orderPhase: OrderPhase;
+  customerName: string;
+  onOrderClick: () => void;
+  onNameChange: (value: string) => void;
+  onSubmitOrder: () => void;
+  onCancelOrder: () => void;
   onRestart: () => void;
 }) {
   const ingredients = Array.from(new Set([...drink.ingredients, ...selectedExtras]));
@@ -535,11 +672,76 @@ function ResultScreen({
           <LightButton onClick={onRestart} icon="↻">
             شروع دوباره
           </LightButton>
-          <DarkButton onClick={onOrder} icon="🛍️">
-            {ordered ? "سفارش انتخاب شد" : "سفارش این نوشیدنی"}
+          <DarkButton onClick={onOrderClick} disabled={orderPhase === "done"} icon="🛍️">
+            {orderPhase === "done" ? "سفارش ثبت شد ✓" : "سفارش این نوشیدنی"}
           </DarkButton>
         </div>
       </div>
+      {orderPhase !== "idle" && orderPhase !== "done" && (
+        <OrderNameModal
+          value={customerName}
+          onChange={onNameChange}
+          onSubmit={onSubmitOrder}
+          onCancel={onCancelOrder}
+          status={orderPhase}
+        />
+      )}
+    </div>
+  );
+}
+
+function OrderNameModal({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  status
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  status: Extract<OrderPhase, "name" | "sending" | "error">;
+}) {
+  return (
+    <div className="order-modal-backdrop">
+      <motion.form
+        initial={{ opacity: 0, y: 16, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className="order-modal-card"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <p className="text-lg font-black">اسمت چیه؟</p>
+        <p className="mt-1 text-xs font-bold text-cafe-cream/75">
+          تا سفارشت رو به نام خودت برای باریستا بفرستیم
+        </p>
+        <input
+          type="text"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="نام و نام خانوادگی"
+          className="order-modal-input"
+          autoFocus
+          disabled={status === "sending"}
+        />
+        {status === "error" && (
+          <p className="mt-2 text-xs font-bold text-red-300">
+            ارسال سفارش با مشکل مواجه شد. دوباره امتحان کن.
+          </p>
+        )}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <LightButton onClick={onCancel} icon="✕">
+            انصراف
+          </LightButton>
+          <DarkButton onClick={onSubmit} disabled={!value.trim() || status === "sending"} icon="🛍️">
+            {status === "sending" ? "در حال ارسال..." : "ثبت سفارش"}
+          </DarkButton>
+        </div>
+      </motion.form>
     </div>
   );
 }

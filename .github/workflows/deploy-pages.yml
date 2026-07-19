@@ -32,6 +32,8 @@ jobs:
 
       - name: Build static site
         run: npm run pages:build
+        env:
+          NEXT_PUBLIC_ORDER_WEBHOOK_URL: ${{ vars.ORDER_WEBHOOK_URL }}
 
       - name: Disable Jekyll
         run: touch out/.nojekyll

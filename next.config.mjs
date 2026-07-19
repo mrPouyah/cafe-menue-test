@@ -14,7 +14,8 @@ const nextConfig = {
   basePath: pagesBasePath || undefined,
   assetPrefix: pagesBasePath || undefined,
   env: {
-    NEXT_PUBLIC_BASE_PATH: pagesBasePath || ""
+    NEXT_PUBLIC_BASE_PATH: pagesBasePath || "",
+    NEXT_PUBLIC_ORDER_WEBHOOK_URL: process.env.NEXT_PUBLIC_ORDER_WEBHOOK_URL || ""
   },
   images: {
     unoptimized: true

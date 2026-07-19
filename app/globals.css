@@ -187,22 +187,6 @@ input {
   box-shadow: none;
 }
 
-/* Selection cards: iOS-style liquid glass over the photo backdrop */
-.choice-card,
-.base-card,
-.visual-card,
-.extra-card {
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.07) 100%);
-  color: #f8f1e4;
-  backdrop-filter: blur(20px) saturate(170%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
-    0 8px 20px rgba(0, 0, 0, 0.22);
-}
-
 /* Result-screen panels stay white with dark text */
 .glass-panel,
 .similar-card,
@@ -213,133 +197,6 @@ input {
   color: #2b2117;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-}
-
-.choice-card {
-  display: flex;
-  min-height: 66px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-radius: 1rem;
-  padding: 0.75rem 1rem;
-  text-align: right;
-}
-
-.choice-card,
-.base-card,
-.visual-card,
-.extra-card {
-  transition:
-    border-color 200ms ease,
-    background 200ms ease,
-    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 240ms ease;
-}
-
-@media (hover: hover) {
-  .choice-card:not(.selected):hover,
-  .base-card:not(.selected):hover,
-  .visual-card:not(.selected):hover,
-  .extra-card:not(.selected):hover {
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.5);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.1) 100%);
-  }
-}
-
-.choice-card:active,
-.base-card:active,
-.visual-card:active,
-.extra-card:active {
-  transform: scale(0.96);
-  transition-duration: 90ms;
-}
-
-.choice-card.selected,
-.base-card.selected,
-.visual-card.selected,
-.extra-card.selected {
-  border-color: rgba(217, 168, 85, 0.85);
-  color: #fff6e3;
-  transform: translateY(-6px);
-  animation:
-    select-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    card-float 2.4s ease-in-out 260ms infinite;
-  box-shadow:
-    inset 0 0 0 1px rgba(217, 168, 85, 0.55),
-    0 0 0 3px rgba(217, 168, 85, 0.12),
-    0 16px 28px rgba(0, 0, 0, 0.28);
-}
-
-@keyframes select-pop {
-  0% {
-    transform: translateY(0) scale(0.96);
-  }
-  60% {
-    transform: translateY(-9px) scale(1.03);
-  }
-  100% {
-    transform: translateY(-6px) scale(1);
-  }
-}
-
-.choice-card.selected::after,
-.base-card.selected::after,
-.visual-card.selected::after,
-.extra-card.selected::after {
-  content: "";
-  position: absolute;
-  left: 12%;
-  right: 12%;
-  bottom: -16px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 107, 129, 0.4),
-    rgba(255, 209, 102, 0.4),
-    rgba(107, 203, 255, 0.4),
-    rgba(178, 107, 255, 0.4)
-  );
-  filter: blur(14px);
-  z-index: -1;
-  animation: glow-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes card-float {
-  0%,
-  100% {
-    transform: translateY(-6px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes glow-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: scaleX(0.9);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scaleX(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .choice-card.selected,
-  .base-card.selected,
-  .visual-card.selected,
-  .extra-card.selected,
-  .choice-card.selected::after,
-  .base-card.selected::after,
-  .visual-card.selected::after,
-  .extra-card.selected::after {
-    animation: none;
-  }
 }
 
 .ingredient-visual {
@@ -354,97 +211,177 @@ input {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
 }
 
-/* real ingredient photo (extras grid) */
-.extra-photo {
+/* Wheel picker: vertical scroll-snap selection with a draggable side thumb */
+.wheel-wrap {
+  position: relative;
+  height: clamp(230px, 40vh, 320px);
+}
+
+.wheel-picker {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.wheel-picker::-webkit-scrollbar {
+  display: none;
+}
+
+.wheel-item {
+  display: flex;
   width: 100%;
-  height: 58px;
+  align-items: center;
+  gap: 0.9rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: right;
+  padding: 0 1.1rem 0 2.5rem;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  cursor: pointer;
+  will-change: transform, opacity;
+  transform-origin: center center;
+}
+
+.wheel-item:focus-visible {
+  outline: 2px solid rgba(217, 168, 85, 0.8);
+  outline-offset: -2px;
+  border-radius: 0.9rem;
+}
+
+.wheel-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.wheel-label {
+  overflow: hidden;
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wheel-helper {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(248, 241, 228, 0.7);
+}
+
+.wheel-photo {
+  flex-shrink: 0;
+  width: 60px;
+  height: 46px;
   border-radius: 0.75rem;
   background-size: cover;
   background-position: center;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    0 4px 10px rgba(0, 0, 0, 0.28);
 }
 
-/* real ingredient photo thumbnails (flavor screen) */
-.option-photo {
-  flex-shrink: 0;
-  width: 78px;
-  height: 58px;
-  border-radius: 0.9rem;
-  background-size: cover;
-  background-position: center;
+.wheel-item.selected .wheel-label {
+  color: #ffe8b8;
+}
+
+.wheel-item.selected .ingredient-visual {
+  background: rgba(217, 168, 85, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(217, 168, 85, 0.7);
+}
+
+.wheel-item.selected .wheel-photo {
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    inset 0 0 0 2px rgba(217, 168, 85, 0.85),
+    0 4px 10px rgba(0, 0, 0, 0.28);
 }
 
-.visual-card {
-  display: grid;
-  min-height: 136px;
-  grid-template-columns: 1.35fr 0.75fr;
-  align-items: center;
-  gap: 1rem;
-  border-radius: 1.2rem;
-  padding: 1rem;
-  text-align: right;
-}
-
-/* real drink photo (temperature screen) */
-.temperature-art {
-  position: relative;
-  min-height: 104px;
-  overflow: hidden;
-  border-radius: 1rem;
-  background-size: cover;
-  background-position: center;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.base-card {
-  display: grid;
-  min-height: 82px;
-  grid-template-columns: 74px 1fr;
-  align-items: center;
-  gap: 1rem;
-  border-radius: 1rem;
-  padding: 0.85rem 1rem;
-  text-align: right;
-}
-
-.extra-card {
-  position: relative;
-  display: grid;
-  min-height: 104px;
-  place-items: center;
-  gap: 0.35rem;
-  border-radius: 1rem;
-  padding: 0.8rem;
-  text-align: center;
-}
-
-.check-dot {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+.wheel-check {
   display: grid;
   width: 24px;
   height: 24px;
+  flex-shrink: 0;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.12);
   color: transparent;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 950;
 }
 
-.extra-card.selected .check-dot {
+.wheel-item.selected .wheel-check {
   border-color: #b8863e;
   background: linear-gradient(145deg, #d9a855, #b8863e);
   color: #ffffff;
+}
+
+.wheel-frame {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: 50%;
+  z-index: 0;
+  transform: translateY(-50%);
+  border-top: 1.5px solid rgba(217, 168, 85, 0.55);
+  border-bottom: 1.5px solid rgba(217, 168, 85, 0.55);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(217, 168, 85, 0.1) 0%, rgba(217, 168, 85, 0.04) 100%);
+  pointer-events: none;
+}
+
+.wheel-track {
+  position: absolute;
+  left: 2px;
+  top: 10px;
+  bottom: 10px;
+  z-index: 5;
+  width: 26px;
+}
+
+.wheel-track::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.wheel-thumb-hit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.wheel-thumb-hit:active {
+  cursor: grabbing;
+}
+
+.wheel-thumb-bar {
+  width: 5px;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #d9a855, #b8863e);
+  box-shadow: 0 2px 6px rgba(184, 134, 62, 0.45);
 }
 
 .coffee-hero {
@@ -552,6 +489,54 @@ input {
   gap: 1rem;
   border-radius: 1.1rem;
   padding: 1rem;
+}
+
+/* order name-prompt overlay */
+.order-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(20, 12, 7, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.order-modal-card {
+  width: 100%;
+  max-width: 340px;
+  border-radius: 1.4rem;
+  padding: 1.5rem;
+  color: #f8f1e4;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(24px) saturate(170%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.order-modal-input {
+  width: 100%;
+  margin-top: 1rem;
+  min-height: 50px;
+  border-radius: 0.9rem;
+  padding: 0 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.12);
+  color: #f8f1e4;
+  font-weight: 700;
+  text-align: right;
+}
+
+.order-modal-input::placeholder {
+  color: rgba(248, 241, 228, 0.5);
+}
+
+.order-modal-input:focus {
+  outline: none;
+  border-color: rgba(217, 168, 85, 0.85);
 }
 
 @media (min-width: 768px) {
