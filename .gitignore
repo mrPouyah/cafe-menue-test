@@ -7,3 +7,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# power_outage_scraper (Python)
+power_outage_scraper/**/__pycache__/
+power_outage_scraper/.pytest_cache/
+power_outage_scraper/*.egg-info/
